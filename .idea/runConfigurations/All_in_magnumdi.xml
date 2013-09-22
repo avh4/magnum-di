@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="All in magnum-di" type="JUnit" factoryName="JUnit">
-    <module name="magnum-di" />
+  <configuration default="false" name="All in magnumdi" type="JUnit" factoryName="JUnit">
+    <module name="magnumdi" />
     <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
     <option name="ALTERNATIVE_JRE_PATH" value="" />
     <option name="PACKAGE_NAME" value="" />
