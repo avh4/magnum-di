@@ -58,7 +58,11 @@ public class MagnumDI {
     }
 
     protected <T> T _get(Class<T> componentClass) {
-        return _get(componentClass, new HashMap<Class<?>, Object>());
+        try {
+            return _get(componentClass, new HashMap<Class<?>, Object>());
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e.getMessage() + "\n        While finding dependency " + componentClass, e.getCause());
+        }
     }
 
     private <T> T _get(Class<T> componentClass, final Map<Class<?>, Object> cache) {
