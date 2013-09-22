@@ -1,6 +1,6 @@
 ---
-package : com.example
-project : my-project
-description : ~
-project_url : ~
-github_user : ~
+package : net.avh4.util.di
+project : magnum-di
+description : Magnum D.I.
+project_url : http://github.com/avh4/magnum-di
+github_user : avh4
