@@ -5,14 +5,12 @@ import java.lang.reflect.InvocationTargetException;
 
 public class ConstructorProvider<T> implements Provider<T> {
     private final Class<T> componentClass;
-    private T instance;
 
     public ConstructorProvider(Class<T> componentClass) {
         this.componentClass = componentClass;
     }
 
     @Override public T get(Container container) {
-        if (instance != null) return instance;
         final Constructor<T> constructor;
         constructor = findConstructor();
         final T instance;
@@ -22,7 +20,6 @@ public class ConstructorProvider<T> implements Provider<T> {
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException("Can't instantiate " + componentClass, e);
         }
-        this.instance = instance;
         return instance;
     }
 

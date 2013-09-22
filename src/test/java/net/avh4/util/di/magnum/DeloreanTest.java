@@ -18,13 +18,13 @@ public class DeloreanTest {
         assertThat(deLorean1.fluxCapacitor).isInstanceOf(RealFluxCapacitor.class);
         assertThat(deLorean1.timeCircuits).isSameAs(((RealFluxCapacitor) deLorean1.fluxCapacitor).timeCircuits);
         assertThat(deLorean1.energySource).isInstanceOf(Plutonium.class);
-//        assertThat(deLorean1.timeCircuits.energySource).isSameAs(deLorean1.energySource);
+        assertThat(deLorean1.timeCircuits.energySource).isSameAs(deLorean1.energySource);
 
         final DeLorean deLorean2 = magnum.get(DeLorean.class, LightningBolt.class);
         assertThat(deLorean2.fluxCapacitor).isInstanceOf(RealFluxCapacitor.class);
         assertThat(deLorean2.timeCircuits).isSameAs(((RealFluxCapacitor) deLorean2.fluxCapacitor).timeCircuits);
         assertThat(deLorean2.energySource).isInstanceOf(LightningBolt.class);
-//        assertThat(deLorean2.timeCircuits.energySource).isSameAs(deLorean2.energySource);
+        assertThat(deLorean2.timeCircuits.energySource).isSameAs(deLorean2.energySource);
     }
 
     public static class DeLorean {

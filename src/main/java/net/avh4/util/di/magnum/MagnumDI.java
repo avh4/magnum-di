@@ -3,7 +3,10 @@ package net.avh4.util.di.magnum;
 import org.pcollections.HashTreePMap;
 import org.pcollections.PMap;
 
-public class MagnumDI implements Container {
+import java.util.HashMap;
+import java.util.Map;
+
+public class MagnumDI {
     private final PMap<Class<?>, Provider<?>> providers;
 
     public MagnumDI(Class<?>... components) {
@@ -46,7 +49,7 @@ public class MagnumDI implements Container {
         return newProviders;
     }
 
-    @Override public <T> T get(Class<T> componentClass, Class<?>... scopedDependencies) {
+    public <T> T get(Class<T> componentClass, Class<?>... scopedDependencies) {
         MagnumDI providers = add(scopedDependencies);
         if (!providers.providers.containsKey(componentClass)) {
             providers = providers.add(componentClass);
@@ -55,11 +58,22 @@ public class MagnumDI implements Container {
     }
 
     protected <T> T _get(Class<T> componentClass) {
+        return _get(componentClass, new HashMap<Class<?>, Object>());
+    }
+
+    private <T> T _get(Class<T> componentClass, final Map<Class<?>, Object> cache) {
         //noinspection unchecked
         final Provider<T> provider = (Provider<T>) providers.get(componentClass);
         if (provider == null)
             throw new RuntimeException("No provider for component: " + componentClass);
 
-        return provider.get(this);
+        return provider.get(new Container() {
+            @Override public <T> T get(Class<T> componentClass) {
+                if (cache.containsKey(componentClass)) return (T) cache.get(componentClass);
+                T instance = _get(componentClass, cache);
+                cache.put(componentClass, instance);
+                return instance;
+            }
+        });
     }
 }

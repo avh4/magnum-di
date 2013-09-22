@@ -28,14 +28,8 @@ public class IntegrationTest {
     }
 
     @Test
-    public void shouldCacheDepedencies() throws Exception {
-        assertThat(magnum.get(DickVanDyke.class)).isSameAs(magnum.get(DickVanDyke.class));
-    }
-
-
-    @Test
     public void shouldProvideInterfaces() throws Exception {
-        assertThat(magnum.get(Series.class)).isSameAs(magnum.get(DickVanDyke.class));
+        assertThat(magnum.get(Series.class)).isInstanceOf(DickVanDyke.class);
     }
 
     @Test
@@ -54,7 +48,7 @@ public class IntegrationTest {
 
     @Test
     public void testDependenciesWithDependencies() throws Exception {
-        assertThat(magnum.get(MerchandisingRights.class).series).isSameAs(magnum.get(DickVanDyke.class));
+        assertThat(magnum.get(MerchandisingRights.class).series).isInstanceOf(DickVanDyke.class);
     }
 
     @Test

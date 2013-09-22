@@ -22,7 +22,7 @@ public class MagnumDITest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         subject = new MagnumDI();
-        stub(provider1.get(Mockito.any(MagnumDI.class))).toReturn(dvd);
+        stub(provider1.get(Mockito.any(Container.class))).toReturn(dvd);
     }
 
     @Test
