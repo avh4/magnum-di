@@ -34,7 +34,7 @@ public class MagnumDI {
     }
 
     protected static <T> PMap<Class<?>, Provider<?>> providersPlus(PMap<Class<?>, Provider<?>> providers, Class<T> componentClass) {
-        return providersPlus(providers, componentClass, new ConstructorProvider<>(componentClass));
+        return providersPlus(providers, componentClass, ConstructorProvider.forClass(componentClass));
     }
 
     protected static <T> PMap<Class<?>, Provider<?>> providersPlus(PMap<Class<?>, Provider<?>> providers, Class<T> componentClass, Provider<T> provider) {

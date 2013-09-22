@@ -6,7 +6,15 @@ import java.lang.reflect.InvocationTargetException;
 public class ConstructorProvider<T> implements Provider<T> {
     private final Class<T> componentClass;
 
-    public ConstructorProvider(Class<T> componentClass) {
+    public static <T> ConstructorProvider<T> forClass(Class<T> componentClass) {
+        if (componentClass.isInterface()) return null;
+        if (componentClass.getConstructors().length == 0) {
+            throw new RuntimeException("No accessible constructors: " + componentClass);
+        }
+        return new ConstructorProvider<>(componentClass);
+    }
+
+    protected ConstructorProvider(Class<T> componentClass) {
         this.componentClass = componentClass;
     }
 
