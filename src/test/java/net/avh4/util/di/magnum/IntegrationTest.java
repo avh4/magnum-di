@@ -24,7 +24,7 @@ public class IntegrationTest {
     @Test(expected = RuntimeException.class)
     public void whenComponentDoesntExist_shouldThrow() throws Exception {
         magnum = new MagnumDI();
-        magnum.get(DickVanDyke.class);
+        magnum.get(Series.class);
     }
 
     @Test

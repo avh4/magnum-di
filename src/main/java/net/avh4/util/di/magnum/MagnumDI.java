@@ -47,7 +47,11 @@ public class MagnumDI implements Container {
     }
 
     @Override public <T> T get(Class<T> componentClass, Class<?>... scopedDependencies) {
-        return add(scopedDependencies)._get(componentClass);
+        MagnumDI providers = add(scopedDependencies);
+        if (!providers.providers.containsKey(componentClass)) {
+            providers = providers.add(componentClass);
+        }
+        return providers._get(componentClass);
     }
 
     protected <T> T _get(Class<T> componentClass) {
