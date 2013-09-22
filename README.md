@@ -37,7 +37,7 @@ Add the following dependencies to your `pom.xml`:
 
 Suppose we have the following components:
 
-```
+```java
     public class DeLorean {
         public DeLorean(TimeCircuits timeCircuits, FluxCapacitor fluxCapacitor, EnergySource energySource) { }
     }
@@ -60,17 +60,17 @@ Our goal is to configure our container to be able to make DeLoreans with differe
 
 First, we will make a container with the reusable components.
 
-```
-MagnumDI magnum = new MagnumDI(TimeCircuits.class, RealFluxCapacitor.class);
+```java
+    MagnumDI magnum = new MagnumDI(TimeCircuits.class, RealFluxCapacitor.class);
 ```
 
 Now we can create DeLoreans!  In each case, we will specify additional scoped dependencies (for our
 DeLoreans we will specify the EnergySource).  Any other objects that depend on EnergySource in the scope
 of this DeLorean will get the same EnergySource instance.
 
-```
-final DeLorean deLorean1 = magnum.get(DeLorean.class, Plutonium.class);
-final DeLorean deLorean2 = magnum.get(DeLorean.class, LightningBolt.class);
+```java
+    final DeLorean deLorean1 = magnum.get(DeLorean.class, Plutonium.class);
+    final DeLorean deLorean2 = magnum.get(DeLorean.class, LightningBolt.class);
 ```
 
 ## Build commands
