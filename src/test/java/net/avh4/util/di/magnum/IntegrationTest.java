@@ -1,8 +1,6 @@
 package net.avh4.util.di.magnum;
 
-import net.avh4.util.di.magnum.test.DickVanDyke;
-import net.avh4.util.di.magnum.test.Dragnet;
-import net.avh4.util.di.magnum.test.Series;
+import net.avh4.util.di.magnum.test.*;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,8 +13,7 @@ public class IntegrationTest {
 
     @Before
     public void setUp() throws Exception {
-        magnum = new MagnumDI();
-        magnum.add(DickVanDyke.class);
+        magnum = new MagnumDI(DickVanDyke.class, MerchandisingRights.class);
     }
 
     @Test
@@ -43,7 +40,7 @@ public class IntegrationTest {
 
     @Test
     public void withAmbiguousInterface_shouldThrowWithMessage() throws Exception {
-        magnum.add(Dragnet.class);
+        magnum = magnum.add(Dragnet.class);
         try {
             magnum.get(Series.class);
             fail("Expected RuntimeException");
@@ -53,5 +50,17 @@ public class IntegrationTest {
                     .contains(Dragnet.class.getCanonicalName())
                     .contains(Series.class.getCanonicalName());
         }
+    }
+
+    @Test
+    public void testDependenciesWithDependencies() throws Exception {
+        assertThat(magnum.get(MerchandisingRights.class).series).isSameAs(magnum.get(DickVanDyke.class));
+    }
+
+    @Test
+    public void testDependencyFromProviderWithAddedScope() throws Exception {
+        magnum = new MagnumDI(MerchandisingRights.class, AdCampaign.class);
+        final AdCampaign adCampaign = magnum.get(AdCampaign.class, DickVanDyke.class);
+        assertThat(adCampaign.merchandisingRights.series).isSameAs(adCampaign.series);
     }
 }

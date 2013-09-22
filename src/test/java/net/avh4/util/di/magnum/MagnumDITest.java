@@ -6,6 +6,7 @@ import net.avh4.util.di.magnum.test.SitcomBase;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -21,24 +22,24 @@ public class MagnumDITest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         subject = new MagnumDI();
-        stub(provider1.get(subject)).toReturn(dvd);
+        stub(provider1.get(Mockito.any(MagnumDI.class))).toReturn(dvd);
     }
 
     @Test
     public void shouldUseProviderForClass() throws Exception {
-        subject.add(DickVanDyke.class, provider1);
+        subject = subject.add(DickVanDyke.class, provider1);
         assertThat(subject.get(DickVanDyke.class)).isSameAs(dvd);
     }
 
     @Test
     public void shouldUseProviderForSuperClass() throws Exception {
-        subject.add(DickVanDyke.class, provider1);
+        subject = subject.add(DickVanDyke.class, provider1);
         assertThat(subject.get(SitcomBase.class)).isSameAs(dvd);
     }
 
     @Test
     public void shouldUseProviderForInterface() throws Exception {
-        subject.add(DickVanDyke.class, provider1);
+        subject = subject.add(DickVanDyke.class, provider1);
         assertThat(subject.get(BlackAndWhite.class)).isSameAs(dvd);
     }
 }
