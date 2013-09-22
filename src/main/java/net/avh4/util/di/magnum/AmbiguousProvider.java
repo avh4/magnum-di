@@ -5,7 +5,7 @@ import org.pcollections.TreePVector;
 
 public class AmbiguousProvider<T> implements Provider<T> {
     private final Class<T> aClass;
-    private PVector<Provider<?>> providers;
+    private final PVector<Provider<?>> providers;
 
     public AmbiguousProvider(Class<T> aClass, Provider<? extends T> oldProvider, Provider<? extends T> newProvider) {
         this.aClass = aClass;
@@ -17,7 +17,15 @@ public class AmbiguousProvider<T> implements Provider<T> {
         }
     }
 
-    @Override public T get(Container container) {
+    @Override public Class<T> getProvidedClass() {
+        return aClass;
+    }
+
+    @Override public Class<?>[] getDependencyKeys() {
+        return new Class<?>[0];
+    }
+
+    @Override public T get(Object[] dependencies) {
         throw new RuntimeException("Multiple matches for " + aClass + "\n        " + providers);
     }
 }

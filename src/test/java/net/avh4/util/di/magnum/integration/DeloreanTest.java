@@ -1,5 +1,6 @@
-package net.avh4.util.di.magnum;
+package net.avh4.util.di.magnum.integration;
 
+import net.avh4.util.di.magnum.MagnumDI;
 import org.junit.Test;
 
 import java.util.Date;
@@ -14,13 +15,13 @@ public class DeloreanTest {
     @Test
     public void test() throws Exception {
         MagnumDI magnum = new MagnumDI(TimeCircuits.class, RealFluxCapacitor.class);
-        final DeLorean deLorean1 = magnum.get(DeLorean.class, Plutonium.class);
+        final DeLorean deLorean1 = magnum.add(Plutonium.class).get(DeLorean.class);
         assertThat(deLorean1.fluxCapacitor).isInstanceOf(RealFluxCapacitor.class);
         assertThat(deLorean1.timeCircuits).isSameAs(((RealFluxCapacitor) deLorean1.fluxCapacitor).timeCircuits);
         assertThat(deLorean1.energySource).isInstanceOf(Plutonium.class);
         assertThat(deLorean1.timeCircuits.energySource).isSameAs(deLorean1.energySource);
 
-        final DeLorean deLorean2 = magnum.get(DeLorean.class, LightningBolt.class);
+        final DeLorean deLorean2 = magnum.add(LightningBolt.class).get(DeLorean.class);
         assertThat(deLorean2.fluxCapacitor).isInstanceOf(RealFluxCapacitor.class);
         assertThat(deLorean2.timeCircuits).isSameAs(((RealFluxCapacitor) deLorean2.fluxCapacitor).timeCircuits);
         assertThat(deLorean2.energySource).isInstanceOf(LightningBolt.class);
@@ -73,13 +74,11 @@ public class DeloreanTest {
 
     public static class Plutonium implements EnergySource {
         @Override public void generateOnePointTwentyOneGigawatts() {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 
     public static class LightningBolt implements EnergySource {
         @Override public void generateOnePointTwentyOneGigawatts() {
-            //To change body of implemented methods use File | Settings | File Templates.
         }
     }
 }

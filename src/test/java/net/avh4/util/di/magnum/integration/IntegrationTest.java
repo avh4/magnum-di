@@ -1,5 +1,6 @@
-package net.avh4.util.di.magnum;
+package net.avh4.util.di.magnum.integration;
 
+import net.avh4.util.di.magnum.MagnumDI;
 import net.avh4.util.di.magnum.test.*;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,7 +55,7 @@ public class IntegrationTest {
     @Test
     public void testDependencyFromProviderWithAddedScope() throws Exception {
         magnum = new MagnumDI(MerchandisingRights.class, AdCampaign.class);
-        final AdCampaign adCampaign = magnum.get(AdCampaign.class, DickVanDyke.class);
+        final AdCampaign adCampaign = magnum.add(DickVanDyke.class).get(AdCampaign.class);
         assertThat(adCampaign.merchandisingRights.series).isSameAs(adCampaign.series);
     }
 }

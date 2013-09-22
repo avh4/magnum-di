@@ -1,64 +1,102 @@
 package net.avh4.util.di.magnum;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.pcollections.HashTreePMap;
+import org.pcollections.PMap;
 
-public class MagnumDI {
+public class MagnumDI implements Container {
     private final Module module;
+    private final ProviderFactory factory;
+    private final PMap<Provider<?>, Object> cache;
 
-    public MagnumDI(Class<?>... components) {
-        Module module = new StandardModule();
-        for (Class<?> component : components) {
-            module = module.add(component);
+    public MagnumDI(Object... components_classOrInstanceOrProvider) {
+        this.factory = new StandardProviderFactory();
+        Module module = new StandardModule()
+                .add(new MissingComponentExplanationProvider<>(MagnumDI.class, "You cannot inject MagnumDI (this would cause a circular dependency).  You probably want to inject " + Container.class.getName() + " instead"));
+        for (Object component : components_classOrInstanceOrProvider) {
+            module = module.add(factory.getProvider(component));
         }
         this.module = module;
+        this.cache = HashTreePMap.empty();
     }
 
-    protected MagnumDI(Module module) {
+    private MagnumDI(ProviderFactory factory, Module module, PMap<Provider<?>, Object> cache) {
+        this.factory = factory;
         this.module = module;
+        this.cache = cache;
     }
 
-    public MagnumDI add(Class<?>... componentClass) {
+    @Override public MagnumDI add(Object... components_classOrInstanceOrProvider) {
         Module module = this.module;
-        for (Class<?> component : componentClass) {
-            module = module.add(component);
+        for (Object component : components_classOrInstanceOrProvider) {
+            module = module.add(factory.getProvider(component));
         }
-        return new MagnumDI(module);
+        return new MagnumDI(factory, module, cache);
     }
 
-    public <T> MagnumDI add(Class<T> componentClass, Provider<? extends T> provider) {
-        return new MagnumDI(module.add(componentClass, provider));
-    }
-
-    public <T> T get(Class<T> componentClass, Class<?>... scopedDependencies) {
-        MagnumDI scoped = add(scopedDependencies);
-        if (scoped.module.getProvider(componentClass) == null) {
-            scoped = scoped.add(componentClass);
-        }
-        return scoped._get(componentClass);
-    }
-
-    protected <T> T _get(Class<T> componentClass) {
-        try {
-            return _get(componentClass, new HashMap<Class<?>, Object>());
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e.getMessage() + "\n        While finding dependency " + componentClass, e.getCause());
-        }
-    }
-
-    private <T> T _get(Class<T> componentClass, final Map<Class<?>, Object> cache) {
+    @Override public <T> T get(Class<T> componentKey) {
+        MagnumDI scoped = create(componentKey);
+        Provider p = scoped.module.getProvider(componentKey);
         //noinspection unchecked
-        final Provider<T> provider = (Provider<T>) module.getProvider(componentClass);
-        if (provider == null)
-            throw new RuntimeException("No provider for component: " + componentClass);
+        return (T) scoped.cache.get(p);
+    }
 
-        return provider.get(new Container() {
-            @Override public <T> T get(Class<T> componentClass) {
-                if (cache.containsKey(componentClass)) return (T) cache.get(componentClass);
-                T instance = _get(componentClass, cache);
-                cache.put(componentClass, instance);
-                return instance;
+    @Override public MagnumDI create(Class<?>... componentKeys) {
+        IncrementalContainer containerUnderConstruction = new IncrementalContainer();
+        MagnumDI magnum = add(containerUnderConstruction);
+
+        for (Class<?> componentKey : componentKeys) {
+            if (magnum.module.getProvider(componentKey) == null) {
+                magnum = magnum.add(componentKey);
             }
-        });
+        }
+
+        PMap<Provider<?>, Object> cache = magnum.cache;
+        for (Class<?> componentKey : componentKeys) {
+            cache = createAndAddTraceToExceptions(componentKey, magnum.module, cache);
+        }
+        final MagnumDI newMagnum = new MagnumDI(magnum.factory, magnum.module, cache);
+        containerUnderConstruction.setDelegate(newMagnum);
+        return newMagnum;
+    }
+
+    private static PMap<Provider<?>, Object> create(Class<?> componentKey, Module module, PMap<Provider<?>, Object> cache) {
+        //noinspection unchecked
+        final Provider<Object> provider = (Provider<Object>) module.getProvider(componentKey);
+        if (provider == null)
+            throw new RuntimeException("No provider for key: " + componentKey);
+
+        Object instance;
+        if (cache.containsKey(provider)) {
+            instance = cache.get(provider);
+        } else {
+            final Class<?>[] dependencyKeys = provider.getDependencyKeys();
+            if (dependencyKeys == null)
+                throw new RuntimeException("Provider must implement getDependencyKeys(): " + provider);
+            final Object[] dependencies = new Object[dependencyKeys.length];
+            for (int i = 0; i < dependencyKeys.length; i++) {
+                Class<?> dependencyKey = dependencyKeys[i];
+                Provider p = module.getProvider(dependencyKey);
+                cache = createAndAddTraceToExceptions(dependencyKey, module, cache);
+                dependencies[i] = cache.get(p);
+            }
+
+            instance = provider.get(dependencies);
+        }
+        return cache.plus(provider, instance);
+    }
+
+    private static PMap<Provider<?>, Object> createAndAddTraceToExceptions(Class<?> dependencyKey, Module module, PMap<Provider<?>, Object> cache) {
+        try {
+            cache = create(dependencyKey, module, cache);
+        } catch (RuntimeException e) {
+            String prefix = "";
+            Throwable cause = e.getCause();
+            if (e.getClass() != RuntimeException.class) {
+                prefix = e.getClass().getCanonicalName() + ": ";
+                cause = e;
+            }
+            throw new RuntimeException(prefix + e.getMessage() + "\n        While finding dependency " + dependencyKey, cause);
+        }
+        return cache;
     }
 }

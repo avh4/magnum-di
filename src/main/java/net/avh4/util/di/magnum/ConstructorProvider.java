@@ -5,6 +5,7 @@ import java.lang.reflect.InvocationTargetException;
 
 public class ConstructorProvider<T> implements Provider<T> {
     private final Class<T> componentClass;
+    private final Constructor<T> constructor;
 
     public static <T> ConstructorProvider<T> forClass(Class<T> componentClass) {
         if (componentClass.isInterface()) return null;
@@ -14,34 +15,32 @@ public class ConstructorProvider<T> implements Provider<T> {
         return new ConstructorProvider<>(componentClass);
     }
 
-    protected ConstructorProvider(Class<T> componentClass) {
+    private ConstructorProvider(Class<T> componentClass) {
         this.componentClass = componentClass;
+        this.constructor = findConstructor();
     }
 
-    @Override public T get(Container container) {
-        final Constructor<T> constructor;
-        constructor = findConstructor();
+    @Override public Class<T> getProvidedClass() {
+        return componentClass;
+    }
+
+    @Override public Class<?>[] getDependencyKeys() {
+        return constructor.getParameterTypes();
+    }
+
+    @Override public T get(Object... dependencies) {
         final T instance;
         try {
-            Object[] args = createArgs(container, constructor.getParameterTypes());
-            instance = constructor.newInstance(args);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            instance = constructor.newInstance(dependencies);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
             throw new RuntimeException("Can't instantiate " + componentClass, e);
         }
         return instance;
     }
 
-    private Object[] createArgs(Container container, Class<?>[] parameterTypes) {
-        final Object[] args = new Object[parameterTypes.length];
-        for (int i = 0; i < parameterTypes.length; i++) {
-            Class<?> parameterType = parameterTypes[i];
-            args[i] = container.get(parameterType);
-        }
-        return args;
-    }
-
     private Constructor<T> findConstructor() {
         Constructor<T> constructor;
+        //noinspection unchecked
         constructor = (Constructor<T>) componentClass.getConstructors()[0];
         return constructor;
     }
@@ -50,7 +49,7 @@ public class ConstructorProvider<T> implements Provider<T> {
         return "ConstructorProvider<" + componentClass.getCanonicalName() + '>';
     }
 
-    @Override
+    @SuppressWarnings("RedundantIfStatement") @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;

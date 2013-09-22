@@ -27,7 +27,7 @@ Add the following dependencies to your `pom.xml`:
   <dependency>
     <groupId>net.avh4.util.di</groupId>
     <artifactId>magnum-di</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
   </dependency>
 ```
 
@@ -69,8 +69,8 @@ DeLoreans we will specify the EnergySource).  Any other objects that depend on E
 of this DeLorean will get the same EnergySource instance.
 
 ```java
-    final DeLorean deLorean1 = magnum.get(DeLorean.class, Plutonium.class);
-    final DeLorean deLorean2 = magnum.get(DeLorean.class, LightningBolt.class);
+    final DeLorean deLorean1 = magnum.add(Plutonium.class).get(DeLorean.class);
+    final DeLorean deLorean2 = magnum.add(LightningBolt.class).get(DeLorean.class);
 ```
 
 ## Build commands
