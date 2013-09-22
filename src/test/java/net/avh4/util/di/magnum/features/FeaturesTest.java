@@ -1,4 +1,4 @@
-package net.avh4.util.di.magnumdi.features;
+package net.avh4.util.di.magnum.features;
 
 import cucumber.api.junit.Cucumber;
 import org.junit.runner.RunWith;

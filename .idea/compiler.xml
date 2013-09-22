@@ -23,10 +23,12 @@
         <outputRelativeToContentRoot value="true" />
         <processorPath useClasspath="true" />
         <module name="magnum-di" />
+        <module name="magnumdi" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="magnum-di" target="1.7" />
+      <module name="magnumdi" target="1.7" />
     </bytecodeTargetLevel>
   </component>
 </project>
