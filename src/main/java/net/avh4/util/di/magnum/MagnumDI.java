@@ -1,7 +1,9 @@
 package net.avh4.util.di.magnum;
 
 import org.pcollections.HashTreePMap;
+import org.pcollections.HashTreePSet;
 import org.pcollections.PMap;
+import org.pcollections.PSet;
 
 public class MagnumDI implements Container {
     private final Module module;
@@ -52,14 +54,14 @@ public class MagnumDI implements Container {
 
         PMap<Provider<?>, Object> cache = magnum.cache;
         for (Class<?> componentKey : componentKeys) {
-            cache = createAndAddTraceToExceptions(componentKey, magnum.module, cache);
+            cache = createAndAddTraceToExceptions(componentKey, magnum.module, cache, HashTreePSet.<Class<?>>empty());
         }
         final MagnumDI newMagnum = new MagnumDI(magnum.factory, magnum.module, cache);
         containerUnderConstruction.setDelegate(newMagnum);
         return newMagnum;
     }
 
-    private static PMap<Provider<?>, Object> create(Class<?> componentKey, Module module, PMap<Provider<?>, Object> cache) {
+    private static PMap<Provider<?>, Object> create(Class<?> componentKey, Module module, PMap<Provider<?>, Object> cache, PSet<Class<?>> inProgressKeys) {
         //noinspection unchecked
         final Provider<Object> provider = (Provider<Object>) module.getProvider(componentKey);
         if (provider == null)
@@ -75,8 +77,11 @@ public class MagnumDI implements Container {
             final Object[] dependencies = new Object[dependencyKeys.length];
             for (int i = 0; i < dependencyKeys.length; i++) {
                 Class<?> dependencyKey = dependencyKeys[i];
+                if (inProgressKeys.contains(dependencyKey))
+                    throw new RuntimeException(componentKey + " has a circular dependency on " + dependencyKey);
+
                 Provider p = module.getProvider(dependencyKey);
-                cache = createAndAddTraceToExceptions(dependencyKey, module, cache);
+                cache = createAndAddTraceToExceptions(dependencyKey, module, cache, inProgressKeys.plus(componentKey));
                 dependencies[i] = cache.get(p);
             }
 
@@ -85,9 +90,9 @@ public class MagnumDI implements Container {
         return cache.plus(provider, instance);
     }
 
-    private static PMap<Provider<?>, Object> createAndAddTraceToExceptions(Class<?> dependencyKey, Module module, PMap<Provider<?>, Object> cache) {
+    private static PMap<Provider<?>, Object> createAndAddTraceToExceptions(Class<?> dependencyKey, Module module, PMap<Provider<?>, Object> cache, PSet<Class<?>> inProgressKeys) {
         try {
-            cache = create(dependencyKey, module, cache);
+            cache = create(dependencyKey, module, cache, inProgressKeys);
         } catch (RuntimeException e) {
             String prefix = "";
             Throwable cause = e.getCause();
