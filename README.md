@@ -27,7 +27,7 @@ Add the following dependencies to your `pom.xml`:
   <dependency>
     <groupId>net.avh4.util.di</groupId>
     <artifactId>magnum-di</artifactId>
-    <version>0.0.0</version>
+    <version>0.0.1</version>
   </dependency>
 ```
 
@@ -76,3 +76,8 @@ final DeLorean deLorean2 = magnum.get(DeLorean.class, LightningBolt.class);
 ## Build commands
 
 * [Mutation coverage](http://pitest.org/): `mvn clean test org.pitest:pitest-maven:mutationCoverage`
+
+## License
+
+[MIT](http://www.opensource.org/licenses/mit-license.php)
+
