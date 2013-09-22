@@ -1,60 +1,41 @@
 package net.avh4.util.di.magnum;
 
-import org.pcollections.HashTreePMap;
-import org.pcollections.PMap;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class MagnumDI {
-    private final PMap<Class<?>, Provider<?>> providers;
+    private final Module module;
 
     public MagnumDI(Class<?>... components) {
-        PMap<Class<?>, Provider<?>> newProviders = HashTreePMap.empty();
+        Module module = new StandardModule();
         for (Class<?> component : components) {
-            newProviders = providersPlus(newProviders, component);
+            module = module.add(component);
         }
-        providers = newProviders;
+        this.module = module;
     }
 
-    protected MagnumDI(PMap<Class<?>, Provider<?>> providers) {
-        this.providers = providers;
+    protected MagnumDI(Module module) {
+        this.module = module;
     }
 
     public MagnumDI add(Class<?>... componentClass) {
-        PMap<Class<?>, Provider<?>> newProviders = providers;
+        Module module = this.module;
         for (Class<?> component : componentClass) {
-            newProviders = providersPlus(newProviders, component);
+            module = module.add(component);
         }
-        return new MagnumDI(newProviders);
+        return new MagnumDI(module);
     }
 
-    public <T> MagnumDI add(Class<T> componentClass, Provider<T> provider) {
-        return new MagnumDI(providersPlus(providers, componentClass, provider));
-    }
-
-    protected static <T> PMap<Class<?>, Provider<?>> providersPlus(PMap<Class<?>, Provider<?>> providers, Class<T> componentClass) {
-        return providersPlus(providers, componentClass, ConstructorProvider.forClass(componentClass));
-    }
-
-    protected static <T> PMap<Class<?>, Provider<?>> providersPlus(PMap<Class<?>, Provider<?>> providers, Class<T> componentClass, Provider<T> provider) {
-        PMap<Class<?>, Provider<?>> newProviders = providers;
-        for (Class<? super T> aClass : new InheritanceIterable<>(componentClass)) {
-            if (newProviders.containsKey(aClass)) {
-                newProviders = newProviders.plus(aClass, new AmbiguousProvider(aClass, providers.get(aClass), provider));
-            } else {
-                newProviders = newProviders.plus(aClass, provider);
-            }
-        }
-        return newProviders;
+    public <T> MagnumDI add(Class<T> componentClass, Provider<? extends T> provider) {
+        return new MagnumDI(module.add(componentClass, provider));
     }
 
     public <T> T get(Class<T> componentClass, Class<?>... scopedDependencies) {
-        MagnumDI providers = add(scopedDependencies);
-        if (!providers.providers.containsKey(componentClass)) {
-            providers = providers.add(componentClass);
+        MagnumDI scoped = add(scopedDependencies);
+        if (scoped.module.getProvider(componentClass) == null) {
+            scoped = scoped.add(componentClass);
         }
-        return providers._get(componentClass);
+        return scoped._get(componentClass);
     }
 
     protected <T> T _get(Class<T> componentClass) {
@@ -67,7 +48,7 @@ public class MagnumDI {
 
     private <T> T _get(Class<T> componentClass, final Map<Class<?>, Object> cache) {
         //noinspection unchecked
-        final Provider<T> provider = (Provider<T>) providers.get(componentClass);
+        final Provider<T> provider = (Provider<T>) module.getProvider(componentClass);
         if (provider == null)
             throw new RuntimeException("No provider for component: " + componentClass);
 
