@@ -1,98 +1,59 @@
 package net.avh4.util.di.magnum;
 
-import org.pcollections.HashTreePMap;
-import org.pcollections.HashTreePSet;
-import org.pcollections.PMap;
-import org.pcollections.PSet;
-
-public class MagnumDI implements Container {
-    private final Module module;
+public class MagnumDI {
     private final ProviderFactory factory;
-    private final PMap<Provider<?>, Object> cache;
+    private final KeyMap keyMap;
+    private final Module module;
+    private final Cache cache;
 
-    public MagnumDI(Object... components_classOrInstanceOrProvider) {
-        this.factory = new StandardProviderFactory();
-        Module module = new StandardModule()
-                .add(new MissingComponentExplanationProvider<>(MagnumDI.class, "You cannot inject MagnumDI (this would cause a circular dependency).  You probably want to inject " + Container.class.getName() + " instead"));
-        for (Object component : components_classOrInstanceOrProvider) {
-            module = module.add(factory.getProvider(component));
-        }
-        this.module = module;
-        this.cache = HashTreePMap.empty();
+    public MagnumDI() {
+        keyMap = new KeyMap();
+        module = new Module();
+        factory = new StandardProviderFactory();
+        cache = new Cache();
     }
 
-    private MagnumDI(ProviderFactory factory, Module module, PMap<Provider<?>, Object> cache) {
+    public MagnumDI(Object... components_classOrInstanceOrProvider) {
+        MagnumDI template = new MagnumDI().add(components_classOrInstanceOrProvider);
+        keyMap = template.keyMap;
+        module = template.module;
+        factory = template.factory;
+        cache = template.cache;
+    }
+
+    private MagnumDI(ProviderFactory factory, KeyMap keyMap, Module module, Cache cache) {
         this.factory = factory;
+        this.keyMap = keyMap;
         this.module = module;
         this.cache = cache;
     }
 
-    @Override public MagnumDI add(Object... components_classOrInstanceOrProvider) {
-        Module module = this.module;
+    public MagnumDI add(Object... components_classOrInstanceOrProvider) {
+        KeyMap keyMap = this.keyMap;
+        Module module = this.module.nextGeneration();
+        final Cache cache = new Cache(this.cache);
+
         for (Object component : components_classOrInstanceOrProvider) {
-            module = module.add(factory.getProvider(component));
-        }
-        return new MagnumDI(factory, module, cache);
-    }
-
-    @Override public <T> T get(Class<T> componentKey) {
-        MagnumDI scoped = create(componentKey);
-        Provider p = scoped.module.getProvider(componentKey);
-        //noinspection unchecked
-        return (T) scoped.cache.get(p);
-    }
-
-    @Override public MagnumDI create(Class<?>... componentKeys) {
-        IncrementalContainer containerUnderConstruction = new IncrementalContainer();
-        MagnumDI magnum = add(containerUnderConstruction);
-
-        for (Class<?> componentKey : componentKeys) {
-            if (magnum.module.getProvider(componentKey) == null) {
-                magnum = magnum.add(componentKey);
-            }
+            final Provider<?> provider = factory.getProvider(component);
+            Object key = provider.getProvidedClass();
+            keyMap = keyMap.add(key);
+            module = module.add(provider);
         }
 
-        PMap<Provider<?>, Object> cache = magnum.cache;
-        for (Class<?> componentKey : componentKeys) {
-            cache = createAndAddTraceToExceptions(componentKey, magnum.module, cache, HashTreePSet.<Class<?>>empty());
-        }
-        final MagnumDI newMagnum = new MagnumDI(magnum.factory, magnum.module, cache);
-        containerUnderConstruction.setDelegate(newMagnum);
-        return newMagnum;
+        return new MagnumDI(factory, keyMap, module, cache);
     }
 
-    private static PMap<Provider<?>, Object> create(Class<?> componentKey, Module module, PMap<Provider<?>, Object> cache, PSet<Class<?>> inProgressKeys) {
-        //noinspection unchecked
-        final Provider<Object> provider = (Provider<Object>) module.getProvider(componentKey);
-        if (provider == null)
-            throw new RuntimeException("No provider for key: " + componentKey);
-
-        Object instance;
-        if (cache.containsKey(provider)) {
-            instance = cache.get(provider);
+    public <T> T get(Class<T> componentKey) {
+        if (keyMap.getBestMatch(componentKey) == null) {
+            return add(componentKey).get(componentKey);
         } else {
-            final Class<?>[] dependencyKeys = provider.getDependencyKeys();
-            if (dependencyKeys == null)
-                throw new RuntimeException("Provider must implement getDependencyKeys(): " + provider);
-            final Object[] dependencies = new Object[dependencyKeys.length];
-            for (int i = 0; i < dependencyKeys.length; i++) {
-                Class<?> dependencyKey = dependencyKeys[i];
-                if (inProgressKeys.contains(dependencyKey))
-                    throw new RuntimeException(componentKey + " has a circular dependency on " + dependencyKey);
-
-                Provider p = module.getProvider(dependencyKey);
-                cache = createAndAddTraceToExceptions(dependencyKey, module, cache, inProgressKeys.plus(componentKey));
-                dependencies[i] = cache.get(p);
-            }
-
-            instance = provider.get(dependencies);
+            return getWithExceptionReporting(componentKey).object;
         }
-        return cache.plus(provider, instance);
     }
 
-    private static PMap<Provider<?>, Object> createAndAddTraceToExceptions(Class<?> dependencyKey, Module module, PMap<Provider<?>, Object> cache, PSet<Class<?>> inProgressKeys) {
+    private <T> GenerationTag<T> getWithExceptionReporting(Class<T> componentKey) {
         try {
-            cache = create(dependencyKey, module, cache, inProgressKeys);
+            return getWithoutAdding(componentKey);
         } catch (RuntimeException e) {
             String prefix = "";
             Throwable cause = e.getCause();
@@ -100,8 +61,56 @@ public class MagnumDI implements Container {
                 prefix = e.getClass().getCanonicalName() + ": ";
                 cause = e;
             }
-            throw new RuntimeException(prefix + e.getMessage() + "\n        While finding dependency " + dependencyKey, cause);
+            throw new RuntimeException(prefix + e.getMessage() + "\n        While getting dependency " + componentKey, cause);
         }
-        return cache;
+    }
+
+    public <T> GenerationTag<T> getWithoutAdding(Class<T> componentKey) {
+        if (componentKey == MagnumDI.class) return new GenerationTag(-1, this);
+        Object key = getBestKey(componentKey);
+        return getFromCacheOrCreateFromProvider(key);
+    }
+
+    private <T> GenerationTag<T> getFromCacheOrCreateFromProvider(Object key) {
+        final GenerationTag<?> cacheResult = cache.get(key);
+        if (cacheResult != null) return (GenerationTag<T>) cacheResult;
+
+        final GenerationTag<T> taggedInstance = createFromProvider(key);
+        cache.add(key, taggedInstance.object, taggedInstance.generation);
+        return taggedInstance;
+    }
+
+    private <T> GenerationTag<T> createFromProvider(Object key) {
+        final GenerationTag<Provider<?>> taggedProvider = module.getProvider(key);
+        final Provider<T> provider = (Provider<T>) taggedProvider.object;
+        final Class<?>[] dependencyTypes = provider.getDependencyTypes();
+        if (dependencyTypes == null)
+            throw new RuntimeException("Provider must implements getDependencyTypes(): " + provider);
+        final GenerationTag<Object[]> taggedDependencies = getDependencies(dependencyTypes);
+        final Object[] dependencies = taggedDependencies.object;
+        final T instance = provider.get(dependencies);
+
+        int youngestGeneration = Math.max(taggedDependencies.generation, taggedProvider.generation);
+        return new GenerationTag<>(youngestGeneration, instance);
+    }
+
+    private <T> Object getBestKey(Class<T> componentKey) {
+        Object key = keyMap.getBestMatch(componentKey);
+        if (key == null) throw new RuntimeException("No provider for key: " + componentKey);
+        if (key instanceof KeyMap.AmbiguousKey)
+            throw new RuntimeException("Multiple matches for " + componentKey + ":\n        " + ((KeyMap.AmbiguousKey) key).keys());
+        return key;
+    }
+
+    private GenerationTag<Object[]> getDependencies(Class<?>[] dependencyTypes) {
+        int youngestGeneration = 0;
+        final Object[] dependencies = new Object[dependencyTypes.length];
+        for (int i = 0; i < dependencyTypes.length; i++) {
+            Class<?> dependencyType = dependencyTypes[i];
+            final GenerationTag<?> taggedDependency = getWithExceptionReporting(dependencyType);
+            youngestGeneration = Math.max(youngestGeneration, taggedDependency.generation);
+            dependencies[i] = taggedDependency.object;
+        }
+        return new GenerationTag<>(youngestGeneration, dependencies);
     }
 }

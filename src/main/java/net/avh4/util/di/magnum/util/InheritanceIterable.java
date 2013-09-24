@@ -1,4 +1,4 @@
-package net.avh4.util.di.magnum;
+package net.avh4.util.di.magnum.util;
 
 import org.pcollections.HashTreePSet;
 import org.pcollections.PSet;

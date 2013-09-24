@@ -1,4 +1,4 @@
-package net.avh4.util.di.magnum;
+package net.avh4.util.di.magnum.util;
 
 import org.junit.Test;
 
@@ -9,6 +9,7 @@ import java.util.Date;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@SuppressWarnings("unchecked")
 public class InheritanceIterableTest {
     @Test
     public void shouldIncludeClass() throws Exception {

@@ -12,11 +12,11 @@ public class InstanceProvider<T> implements Provider<T> {
         return (Class<T>) instance.getClass();
     }
 
-    @Override public Class<?>[] getDependencyKeys() {
+    @Override public Class<?>[] getDependencyTypes() {
         return new Class<?>[0];
     }
 
-    @Override public T get(Object[] dependencies) {
+    @Override public T get(Object... dependencies) {
         return instance;
     }
 

@@ -24,18 +24,16 @@ public class ConstructorProvider<T> implements Provider<T> {
         return componentClass;
     }
 
-    @Override public Class<?>[] getDependencyKeys() {
+    @Override public Class<?>[] getDependencyTypes() {
         return constructor.getParameterTypes();
     }
 
     @Override public T get(Object... dependencies) {
-        final T instance;
         try {
-            instance = constructor.newInstance(dependencies);
+            return constructor.newInstance(dependencies);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
             throw new RuntimeException("Can't instantiate " + componentClass, e);
         }
-        return instance;
     }
 
     private Constructor<T> findConstructor() {

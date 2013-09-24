@@ -16,7 +16,12 @@ public class InstanceProviderTest {
 
     @Test
     public void shouldProvideInstance() throws Exception {
-        assertThat(subject.get(null)).isEqualTo("Test");
+        assertThat(subject.get()).isEqualTo("Test");
+    }
+
+    @Test
+    public void shouldNotRequireParameters() throws Exception {
+        assertThat(subject.getDependencyTypes()).isEmpty();
     }
 
     @Test

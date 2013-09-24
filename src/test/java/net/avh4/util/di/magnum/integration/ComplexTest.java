@@ -1,6 +1,5 @@
 package net.avh4.util.di.magnum.integration;
 
-import net.avh4.util.di.magnum.Container;
 import net.avh4.util.di.magnum.MagnumDI;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,11 +13,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p/>
  * A:  has dependencies B, C, D
  * B:  has dependency E, and a container that can create F and G
- * C:  has no dependencies
+ * C:  is provided by the caller
  * D:  has no dependencies
  * E:  has dependency C
  * F:  has dependencies C, D, G
- * G:  has no dependencies
+ * G:  has no dependency I
+ * I:  is provided for each call of B.makeF()
  * <p/>
  * The scenario is as follows:
  * 1. The caller creates a C without assistance.
@@ -39,15 +39,13 @@ public class ComplexTest {
 
     @Before
     public void setUp() throws Exception {
-        c = new C() {
-        };
+        c = new C() {};
         MagnumDI magnum = new MagnumDI(A.class, B.class, c, D.class, E.class, F.class, G.class);
-        MagnumDI cache = magnum.create(A.class, D.class);
-        a = cache.get(A.class);
-        d = cache.get(D.class);
+        a = magnum.get(A.class);
+        d = magnum.get(D.class);
 
-        a.b.makeF();
-        a.b.makeF();
+        a.b.makeF(new I() {});
+        a.b.makeF(new I() {});
     }
 
     @Test
@@ -96,27 +94,25 @@ public class ComplexTest {
 
     public static class B {
         final E e;
-        final Container container;
+        final MagnumDI container;
         final ArrayList<F> fs = new ArrayList<>();
         final ArrayList<G> gs = new ArrayList<>();
 
-        public B(E e, Container container) {
+        public B(E e, MagnumDI container) {
             this.e = e;
             this.container = container;
         }
 
-        public void makeF() {
-            MagnumDI cache = container.create(F.class, G.class);
-            fs.add(cache.get(F.class));
-            gs.add(cache.get(G.class));
+        public void makeF(I i) {
+            MagnumDI container = this.container.add(i);
+            fs.add(container.get(F.class));
+            gs.add(container.get(G.class));
         }
     }
 
-    public interface C {
-    }
+    public interface C {}
 
-    public static class D {
-    }
+    public static class D {}
 
     public static class E {
         final C c;
@@ -139,5 +135,12 @@ public class ComplexTest {
     }
 
     public static class G {
+        final I i;
+
+        public G(I i) {
+            this.i = i;
+        }
     }
+
+    public interface I {}
 }
