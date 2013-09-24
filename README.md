@@ -1,6 +1,6 @@
 [![Build Status](https://secure.travis-ci.org/avh4/magnum-di.png?branch=master)](http://travis-ci.org/avh4/magnum-di)
 
-## Magnum, D.I.
+## ![Magnum, D.I.](magnum-di.png)
 
 > If basketball was all there was to life, you'd be set.
 
