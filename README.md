@@ -31,7 +31,7 @@ Add the following dependencies to your `pom.xml`:
   <dependency>
     <groupId>net.avh4.util.di</groupId>
     <artifactId>magnum-di</artifactId>
-    <version>0.0.2</version>
+    <version>1.0.0-rc1</version>
   </dependency>
 ```
 
