@@ -9,7 +9,7 @@
 
     <groupId>net.avh4.util.di</groupId>
     <artifactId>magnum-di</artifactId>
-    <version>1.0.0-rc1</version>
+    <version>1.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>magnum-di</name>
