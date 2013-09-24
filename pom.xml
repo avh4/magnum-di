@@ -9,7 +9,7 @@
 
     <groupId>net.avh4.util.di</groupId>
     <artifactId>magnum-di</artifactId>
-    <version>0.0.3-SNAPSHOT</version>
+    <version>1.0.0-rc1</version>
     <packaging>jar</packaging>
 
     <name>magnum-di</name>
@@ -67,6 +67,14 @@
                     <targetTests>
                         <param>net.avh4.util.di.*</param>
                     </targetTests>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.atlassian.maven.plugins</groupId>
+                <artifactId>maven-jgitflow-plugin</artifactId>
+                <version>1.0-alpha21.1</version>
+                <configuration>
+                    <!-- see goals wiki page for configuration options -->
                 </configuration>
             </plugin>
         </plugins>
