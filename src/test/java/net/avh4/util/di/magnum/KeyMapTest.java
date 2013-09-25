@@ -50,9 +50,15 @@ public class KeyMapTest {
     }
 
     @Test
-    public void get_withMultipleMatches_shouldBeAmbiguous() throws Exception {
+    public void get_withMultipleMatches_shouldGetMostRecent() throws Exception {
         subject = subject.add(DickVanDyke.class).add(Dragnet.class);
-        assertThat(subject.getBestMatch(Series.class)).isInstanceOf(KeyMap.AmbiguousKey.class);
+        assertThat(subject.getBestMatch(Series.class)).isEqualTo(Dragnet.class);
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void add_forConcreteClassThatIsAlreadyProvided_shouldThrow() throws Exception {
+        subject = new KeyMap().add(Subclass.class);
+        subject.add(ConcreteClass.class);
     }
 
     @SuppressWarnings("UnusedDeclaration")
@@ -105,4 +111,7 @@ public class KeyMapTest {
             assertThat(subject.getBestMatch(Boolean.TYPE)).isSameAs(Boolean.class);
         }
     }
+
+    public static class ConcreteClass { }
+    public static class Subclass extends ConcreteClass {}
 }

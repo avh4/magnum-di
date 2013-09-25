@@ -1,28 +1,10 @@
 package net.avh4.util.di.magnum;
 
 import net.avh4.util.di.magnum.util.InheritanceIterable;
-import org.pcollections.ConsPStack;
 import org.pcollections.HashTreePMap;
 import org.pcollections.PMap;
-import org.pcollections.PStack;
 
 public class KeyMap {
-    public static class AmbiguousKey {
-        private final PStack<Object> keys;
-
-        public AmbiguousKey(AmbiguousKey keys, Object key) {
-            this.keys = keys.keys.plus(key);
-        }
-
-        public AmbiguousKey(Object key1, Object key2) {
-            this.keys = ConsPStack.singleton(key1).plus(key2);
-        }
-
-        public PStack<Object> keys() {
-            return keys;
-        }
-    }
-
     private final PMap<Object, Object> map;
 
     public KeyMap() {
@@ -34,6 +16,7 @@ public class KeyMap {
     }
 
     public KeyMap add(Object key) {
+        if (map.containsKey(key)) throw new RuntimeException("Container already has a provider for key: " + key);
         if (key instanceof Class) {
             return addClass((Class) key);
         } else {
@@ -44,7 +27,7 @@ public class KeyMap {
     private KeyMap addClass(Class<?> bClass) {
         PMap<Object, Object> map = this.map;
         for (Class<?> key : new InheritanceIterable<>(bClass)) {
-            map = add(map, bClass, key);
+            map = map.plus(key, bClass);
         }
         map = addPrimitive(bClass, map);
         return new KeyMap(map);
@@ -52,42 +35,28 @@ public class KeyMap {
 
     private PMap<Object, Object> addPrimitive(Class<?> bClass, PMap<Object, Object> map) {
         if (bClass == Integer.class) {
-            map = add(map, bClass, Integer.TYPE);
+            map = map.plus(Integer.TYPE, bClass);
         }
         if (bClass == Long.class) {
-            map = add(map, bClass, Long.TYPE);
+            map = map.plus(Long.TYPE, bClass);
         }
         if (bClass == Byte.class) {
-            map = add(map, bClass, Byte.TYPE);
+            map = map.plus(Byte.TYPE, bClass);
         }
         if (bClass == Character.class) {
-            map = add(map, bClass, Character.TYPE);
+            map = map.plus(Character.TYPE, bClass);
         }
         if (bClass == Short.class) {
-            map = add(map, bClass, Short.TYPE);
+            map = map.plus(Short.TYPE, bClass);
         }
         if (bClass == Float.class) {
-            map = add(map, bClass, Float.TYPE);
+            map = map.plus(Float.TYPE, bClass);
         }
         if (bClass == Double.class) {
-            map = add(map, bClass, Double.TYPE);
+            map = map.plus(Double.TYPE, bClass);
         }
         if (bClass == Boolean.class) {
-            map = add(map, bClass, Boolean.TYPE);
-        }
-        return map;
-    }
-
-    private PMap<Object, Object> add(PMap<Object, Object> map, Class<?> bClass, Class<?> key) {
-        final Object oldValue = this.map.get(key);
-        if (oldValue == null) {
-            map = map.plus(key, bClass);
-        } else {
-            if (oldValue instanceof AmbiguousKey) {
-                map = map.plus(key, new AmbiguousKey((AmbiguousKey) oldValue, bClass));
-            } else {
-                map = map.plus(key, new AmbiguousKey(oldValue, bClass));
-            }
+            map = map.plus(Boolean.TYPE, bClass);
         }
         return map;
     }

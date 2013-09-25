@@ -34,17 +34,9 @@ public class IntegrationTest {
     }
 
     @Test
-    public void withAmbiguousInterface_shouldThrowWithMessage() throws Exception {
+    public void withAmbiguousInterface_shouldUseLastAdded() throws Exception {
         magnum = magnum.add(Dragnet.class);
-        try {
-            magnum.get(Series.class);
-            fail("Expected RuntimeException");
-        } catch (RuntimeException e) {
-            assertThat(e.getMessage())
-                    .contains(DickVanDyke.class.getCanonicalName())
-                    .contains(Dragnet.class.getCanonicalName())
-                    .contains(Series.class.getCanonicalName());
-        }
+        assertThat(magnum.get(Series.class)).isInstanceOf(Dragnet.class);
     }
 
     @Test

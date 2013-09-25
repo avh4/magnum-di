@@ -57,7 +57,23 @@ public class MagnumDI {
 
     public <T> T get(Class<T> componentKey) {
         if (keyMap.getBestMatch(componentKey) == null) {
-            return add(componentKey).get(componentKey);
+            try {
+                final Provider<?> provider = factory.getProvider(componentKey);
+                final Class<?>[] dependencyTypes = provider.getDependencyTypes();
+                if (dependencyTypes == null)
+                    throw new RuntimeException("Provider must implements getDependencyTypes(): " + provider);
+                final GenerationTag<Object[]> taggedDependencies = getDependencies(dependencyTypes);
+                final Object[] dependencies = taggedDependencies.object;
+                return (T) provider.get(dependencies);
+            } catch (RuntimeException e) {
+                String prefix = "";
+                Throwable cause = e.getCause();
+                if (e.getClass() != RuntimeException.class) {
+                    prefix = e.getClass().getCanonicalName() + ": ";
+                    cause = e;
+                }
+                throw new RuntimeException(prefix + e.getMessage() + "\n        While getting dependency " + componentKey, cause);
+            }
         } else {
             return getWithExceptionReporting(componentKey).object;
         }
@@ -109,8 +125,6 @@ public class MagnumDI {
     private <T> Object getBestKey(Class<T> componentKey) {
         Object key = keyMap.getBestMatch(componentKey);
         if (key == null) throw new RuntimeException("No provider for key: " + componentKey);
-        if (key instanceof KeyMap.AmbiguousKey)
-            throw new RuntimeException("Multiple matches for " + componentKey + ":\n        " + ((KeyMap.AmbiguousKey) key).keys());
         return key;
     }
 
