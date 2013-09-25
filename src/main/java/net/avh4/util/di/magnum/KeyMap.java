@@ -35,7 +35,7 @@ public class KeyMap {
 
     public KeyMap add(Object key) {
         if (key instanceof Class) {
-            return addClass((Class)key);
+            return addClass((Class) key);
         } else {
             return new KeyMap(map.plus(key, key));
         }
@@ -44,18 +44,52 @@ public class KeyMap {
     private KeyMap addClass(Class<?> bClass) {
         PMap<Object, Object> map = this.map;
         for (Class<?> key : new InheritanceIterable<>(bClass)) {
-            final Object oldValue = this.map.get(key);
-            if (oldValue == null) {
-                map = map.plus(key, bClass);
+            map = add(map, bClass, key);
+        }
+        map = addPrimitive(bClass, map);
+        return new KeyMap(map);
+    }
+
+    private PMap<Object, Object> addPrimitive(Class<?> bClass, PMap<Object, Object> map) {
+        if (bClass == Integer.class) {
+            map = add(map, bClass, Integer.TYPE);
+        }
+        if (bClass == Long.class) {
+            map = add(map, bClass, Long.TYPE);
+        }
+        if (bClass == Byte.class) {
+            map = add(map, bClass, Byte.TYPE);
+        }
+        if (bClass == Character.class) {
+            map = add(map, bClass, Character.TYPE);
+        }
+        if (bClass == Short.class) {
+            map = add(map, bClass, Short.TYPE);
+        }
+        if (bClass == Float.class) {
+            map = add(map, bClass, Float.TYPE);
+        }
+        if (bClass == Double.class) {
+            map = add(map, bClass, Double.TYPE);
+        }
+        if (bClass == Boolean.class) {
+            map = add(map, bClass, Boolean.TYPE);
+        }
+        return map;
+    }
+
+    private PMap<Object, Object> add(PMap<Object, Object> map, Class<?> bClass, Class<?> key) {
+        final Object oldValue = this.map.get(key);
+        if (oldValue == null) {
+            map = map.plus(key, bClass);
+        } else {
+            if (oldValue instanceof AmbiguousKey) {
+                map = map.plus(key, new AmbiguousKey((AmbiguousKey) oldValue, bClass));
             } else {
-                if (oldValue instanceof AmbiguousKey) {
-                    map = map.plus(key, new AmbiguousKey((AmbiguousKey)oldValue, bClass));
-                } else {
-                    map = map.plus(key, new AmbiguousKey(oldValue, bClass));
-                }
+                map = map.plus(key, new AmbiguousKey(oldValue, bClass));
             }
         }
-        return new KeyMap(map);
+        return map;
     }
 
     public Object getBestMatch(Object key) {
