@@ -1,14 +1,17 @@
 package net.avh4.util.di.magnum;
 
+import net.avh4.test.junit.Nested;
 import net.avh4.util.di.magnum.test.DickVanDyke;
 import net.avh4.util.di.magnum.test.Dragnet;
 import net.avh4.util.di.magnum.test.Series;
 import net.avh4.util.di.magnum.test.SitcomBase;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(Nested.class)
 public class KeyMapTest {
     private KeyMap subject;
 
@@ -47,8 +50,68 @@ public class KeyMapTest {
     }
 
     @Test
-    public void get_withMultipleMatches_shouldBeAmbiguous() throws Exception {
+    public void get_withMultipleMatches_shouldGetMostRecent() throws Exception {
         subject = subject.add(DickVanDyke.class).add(Dragnet.class);
-        assertThat(subject.getBestMatch(Series.class)).isInstanceOf(KeyMap.AmbiguousKey.class);
+        assertThat(subject.getBestMatch(Series.class)).isEqualTo(Dragnet.class);
     }
+
+    @Test(expected = RuntimeException.class)
+    public void add_forConcreteClassThatIsAlreadyProvided_shouldThrow() throws Exception {
+        subject = new KeyMap().add(Subclass.class);
+        subject.add(ConcreteClass.class);
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public class BoxedPrimitives {
+        @Test
+        public void get_int_shouldMatchInteger() throws Exception {
+            subject = subject.add(Integer.class);
+            assertThat(subject.getBestMatch(Integer.TYPE)).isSameAs(Integer.class);
+        }
+
+        @Test
+        public void get_byte_shouldMatchByte() throws Exception {
+            subject = subject.add(Byte.class);
+            assertThat(subject.getBestMatch(Byte.TYPE)).isSameAs(Byte.class);
+        }
+
+        @Test
+        public void get_char_shouldMatchCharacter() throws Exception {
+            subject = subject.add(Character.class);
+            assertThat(subject.getBestMatch(Character.TYPE)).isSameAs(Character.class);
+        }
+
+        @Test
+        public void get_short_shouldMatchShort() throws Exception {
+            subject = subject.add(Short.class);
+            assertThat(subject.getBestMatch(Short.TYPE)).isSameAs(Short.class);
+        }
+
+        @Test
+        public void get_long_shouldMatchLong() throws Exception {
+            subject = subject.add(Long.class);
+            assertThat(subject.getBestMatch(Long.TYPE)).isSameAs(Long.class);
+        }
+
+        @Test
+        public void get_float_shouldMatchFloat() throws Exception {
+            subject = subject.add(Float.class);
+            assertThat(subject.getBestMatch(Float.TYPE)).isSameAs(Float.class);
+        }
+
+        @Test
+        public void get_double_shouldMatchDouble() throws Exception {
+            subject = subject.add(Double.class);
+            assertThat(subject.getBestMatch(Double.TYPE)).isSameAs(Double.class);
+        }
+
+        @Test
+        public void get_bool_shouldMatchBoolean() throws Exception {
+            subject = subject.add(Boolean.class);
+            assertThat(subject.getBestMatch(Boolean.TYPE)).isSameAs(Boolean.class);
+        }
+    }
+
+    public static class ConcreteClass { }
+    public static class Subclass extends ConcreteClass {}
 }

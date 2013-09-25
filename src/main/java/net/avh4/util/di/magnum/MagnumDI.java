@@ -1,5 +1,7 @@
 package net.avh4.util.di.magnum;
 
+import java.util.Arrays;
+
 public class MagnumDI {
     private final ProviderFactory factory;
     private final KeyMap keyMap;
@@ -28,7 +30,17 @@ public class MagnumDI {
         this.cache = cache;
     }
 
+    public MagnumDI addArray(Object[] arrayInstanceComponent) {
+        return add(new Object[]{arrayInstanceComponent});
+    }
+
     public MagnumDI add(Object... components_classOrInstanceOrProvider) {
+        if (components_classOrInstanceOrProvider.length > 1
+                && components_classOrInstanceOrProvider[0].getClass() == components_classOrInstanceOrProvider[1].getClass()
+                && !(components_classOrInstanceOrProvider[0] instanceof Class)
+                && !(components_classOrInstanceOrProvider[0] instanceof Provider)) {
+            throw new IllegalArgumentException("It looks like you're trying to add an array as an instance component, but Java varargs outsmarted you!  You probably want to call addArray() instead--if not, you shouldn't be trying to add two objects of the same type to the container: " + Arrays.toString(components_classOrInstanceOrProvider));
+        }
         KeyMap keyMap = this.keyMap;
         Module module = this.module.nextGeneration();
         final Cache cache = new Cache(this.cache);
@@ -45,7 +57,23 @@ public class MagnumDI {
 
     public <T> T get(Class<T> componentKey) {
         if (keyMap.getBestMatch(componentKey) == null) {
-            return add(componentKey).get(componentKey);
+            try {
+                final Provider<?> provider = factory.getProvider(componentKey);
+                final Class<?>[] dependencyTypes = provider.getDependencyTypes();
+                if (dependencyTypes == null)
+                    throw new RuntimeException("Provider must implements getDependencyTypes(): " + provider);
+                final GenerationTag<Object[]> taggedDependencies = getDependencies(dependencyTypes);
+                final Object[] dependencies = taggedDependencies.object;
+                return (T) provider.get(dependencies);
+            } catch (RuntimeException e) {
+                String prefix = "";
+                Throwable cause = e.getCause();
+                if (e.getClass() != RuntimeException.class) {
+                    prefix = e.getClass().getCanonicalName() + ": ";
+                    cause = e;
+                }
+                throw new RuntimeException(prefix + e.getMessage() + "\n        While getting dependency " + componentKey, cause);
+            }
         } else {
             return getWithExceptionReporting(componentKey).object;
         }
@@ -97,8 +125,6 @@ public class MagnumDI {
     private <T> Object getBestKey(Class<T> componentKey) {
         Object key = keyMap.getBestMatch(componentKey);
         if (key == null) throw new RuntimeException("No provider for key: " + componentKey);
-        if (key instanceof KeyMap.AmbiguousKey)
-            throw new RuntimeException("Multiple matches for " + componentKey + ":\n        " + ((KeyMap.AmbiguousKey) key).keys());
         return key;
     }
 

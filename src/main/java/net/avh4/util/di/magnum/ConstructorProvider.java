@@ -8,7 +8,7 @@ public class ConstructorProvider<T> implements Provider<T> {
     private final Constructor<T> constructor;
 
     public static <T> ConstructorProvider<T> forClass(Class<T> componentClass) {
-        if (componentClass.isInterface()) return null;
+        if (componentClass.isInterface()) throw new RuntimeException("Can't create provider for interface: " + componentClass.getName());
         if (componentClass.getConstructors().length == 0) {
             throw new RuntimeException("No accessible constructors: " + componentClass);
         }

@@ -43,9 +43,9 @@ public class ConstructorProviderTest {
         assertThat(mrSubject.getDependencyTypes()).containsExactly(Series.class);
     }
 
-    @Test
-    public void forInterface_shouldReturnNull() throws Exception {
-        assertThat(ConstructorProvider.forClass(Serializable.class)).isNull();
+    @Test(expected = RuntimeException.class)
+    public void forInterface_shouldThrow() throws Exception {
+        ConstructorProvider.forClass(Serializable.class);
     }
 
     @Test
