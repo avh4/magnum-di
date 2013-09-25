@@ -1,5 +1,7 @@
 package net.avh4.util.di.magnum;
 
+import java.util.Arrays;
+
 public class MagnumDI {
     private final ProviderFactory factory;
     private final KeyMap keyMap;
@@ -28,7 +30,17 @@ public class MagnumDI {
         this.cache = cache;
     }
 
+    public MagnumDI addArray(Object[] arrayInstanceComponent) {
+        return add(new Object[]{arrayInstanceComponent});
+    }
+
     public MagnumDI add(Object... components_classOrInstanceOrProvider) {
+        if (components_classOrInstanceOrProvider.length > 1
+                && components_classOrInstanceOrProvider[0].getClass() == components_classOrInstanceOrProvider[1].getClass()
+                && !(components_classOrInstanceOrProvider[0] instanceof Class)
+                && !(components_classOrInstanceOrProvider[0] instanceof Provider)) {
+            throw new IllegalArgumentException("It looks like you're trying to add an array as an instance component, but Java varargs outsmarted you!  You probably want to call addArray() instead--if not, you shouldn't be trying to add two objects of the same type to the container: " + Arrays.toString(components_classOrInstanceOrProvider));
+        }
         KeyMap keyMap = this.keyMap;
         Module module = this.module.nextGeneration();
         final Cache cache = new Cache(this.cache);
